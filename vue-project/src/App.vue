@@ -50,7 +50,7 @@ async function calcularComisiones() {
   }
 
   try {
-    const res = await fetch(`http://localhost:8000/comision?fecha_inicio=${fechaInicio.value}&fecha_fin=${fechaFin.value}`)
+    const res = await fetch(`/comision?fecha_inicio=${fechaInicio.value}&fecha_fin=${fechaFin.value}`)
     const data = await res.json()
     resultado.value = data.resultado
   } catch (err) {
