@@ -1,0 +1,66 @@
+from fastapi import FastAPI, Query
+from datetime import datetime
+from typing import Dict
+from app.models import usuarios, ventas
+from fastapi.middleware.cors import CORSMiddleware
+
+
+app = FastAPI()
+
+# Habilitar CORS para permitir conexión desde el frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # o ["*"] para permitir todo (no recomendado en producción)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+REGLAS_COMISION = [
+    (1000, 1.15),
+    (800, 0.10),
+    (600, 0.08),
+    (400, 0.06),
+]
+
+def obtener_porcentaje_comision(total: float) -> float:
+    for limite, porcentaje in REGLAS_COMISION:
+        if total >= limite:
+            return porcentaje
+    return 0.0
+
+@app.get("/comision")
+def calcular_comisiones_por_vendedor(
+    fecha_inicio: datetime = Query(...),
+    fecha_fin: datetime = Query(...)
+):
+    resumen: Dict[int, Dict] = {}
+
+    for venta in ventas:
+        if fecha_inicio <= venta["fecha"] <= fecha_fin:
+            usuario_id = venta["usuario_id"]
+            resumen.setdefault(usuario_id, {"total_ventas": 0.0})
+            resumen[usuario_id]["total_ventas"] += venta["monto"]
+
+    resultado = []
+    for usuario in usuarios:
+        uid = usuario["id"]
+        nombre = usuario["nombre"]
+        total = resumen.get(uid, {}).get("total_ventas", 0.0)
+        porcentaje = obtener_porcentaje_comision(total)
+        comision = round(total * porcentaje, 2)
+
+        resultado.append({
+            "usuario": nombre,
+            "total_ventas": total,
+            "porcentaje_aplicado": porcentaje,
+            "comision_calculada": comision
+        })
+
+    return {
+        "rango": {
+            "desde": fecha_inicio.date(),
+            "hasta": fecha_fin.date()
+        },
+        "resultado": resultado
+    }
