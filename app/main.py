@@ -3,7 +3,8 @@ from datetime import datetime
 from typing import Dict
 from app.models import usuarios, ventas
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 
@@ -64,3 +65,10 @@ def calcular_comisiones_por_vendedor(
         },
         "resultado": resultado
     }
+
+
+app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
+
+@app.get("/")
+def read_index():
+    return FileResponse("app/static/index.html")
