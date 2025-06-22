@@ -5,6 +5,7 @@ from app.models import usuarios, ventas
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+import os
 
 app = FastAPI()
 
@@ -69,6 +70,7 @@ def calcular_comisiones_por_vendedor(
 
 app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
 
-@app.get("/")
-def read_index():
+# Cualquier ruta no encontrada devuelve el index.html (para SPAs)
+@app.get("/{full_path:path}")
+async def serve_vue_app():
     return FileResponse("app/static/index.html")
